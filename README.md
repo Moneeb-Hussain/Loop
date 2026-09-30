@@ -1,59 +1,72 @@
 # Loop
 
-Loop is a full-stack TypeScript app for capturing messy spoken thoughts, transcribing them live, extracting structured tasks, and managing the resulting list.
+Say the mess in your head. Loop writes it down, splits it into tasks, and tells you the one thing to do next.
 
-Current flow:
+Built for the moment when everything feels urgent and nothing has a first step. Talk, get a live transcript, then a short list of tasks, reminders, and open loops. Guide Me picks one item that fits the time and energy you actually have.
+
+## Demo
+
+| Step | What you do |
+|---|---|
+| 1 | Open the app and allow the microphone |
+| 2 | Talk through whatever is on your mind. Words appear while you speak |
+| 3 | **Stop and sort.** The ramble becomes tasks, reminders, and open loops |
+| 4 | Open **Guide Me**, set your time and energy, and do the one thing it names |
+| 5 | **Did it** or **Not this one** to move on |
+
+No mic handy? On Capture, choose **Use sample** and sort that paragraph instead.
+
+## How it works
 
 ```text
-browser mic -> backend WebSocket -> AssemblyAI Streaming -> live transcript -> POST /sessions -> LeMUR extraction -> tasks
+mic
+  → GET /api/transcribe/token
+  → browser opens AssemblyAI Streaming
+  → live transcript
+  → POST /api/sessions
+  → LeMUR extracts tasks
+  → POST /api/guide-me
+  → one next action, a reason, and a first step
 ```
 
-## Tech Stack
+The AssemblyAI API key stays on the server. The browser only receives a token that lasts long enough to open the streaming socket.
 
-- Frontend: React 18, Vite, TypeScript
-- Backend: Express, TypeScript, `ws`
-- AI/STT: AssemblyAI Streaming v3 and LeMUR
-- Storage: in-memory arrays, no database yet
-- Auth: none, single shared task list
-- Future database: PostgreSQL schema is in `backend/future-postgres/schema.sql`
+If LeMUR fails, the transcript is still saved as one open loop, and Guide Me still picks a task with a local reason. The demo does not stop on an AI error.
 
-## Implemented
+## Product
 
-### Frontend
+| Screen | What it does |
+|---|---|
+| Capture | Live mic, editable transcript, sample ramble, sort |
+| Tasks | Add, search, filter, edit, snooze, complete, delete |
+| Guide Me | Time + energy in, one next action out. Accept or skip is saved |
+| History | Each capture, from raw words to the items that came out of it |
+| Progress | Last 7 days, streak, and closed loops |
 
-- Minimal app UI with tabs: Capture, Tasks, Guide Me, History, Progress
-- Live mic capture with `getUserMedia`
-- Audio conversion to PCM16 mono 16 kHz before streaming
-- Live transcript rendering in the Capture textarea
-- Transcript extraction via `POST /sessions`
-- Task manager wired to backend:
-  - list tasks
-  - manual add
-  - filters: Today, Reminders, Tasks, Open loops, Done
-  - mark done
-  - snooze with reason
-  - delete
-- History view from `GET /sessions`
-- Local-only Guide Me preview
-- Local-only progress metrics
+After a sort, items that look like something already on the list are shown side by side. You choose merge or keep both. Nothing is merged silently.
 
-### Backend
+## Stack
 
-- `GET /health`
-- `GET /tasks`
-- `POST /tasks`
-- `PATCH /tasks/:id`
-- `DELETE /tasks/:id`
-- `POST /sessions`
-- `GET /sessions`
-- `ws://localhost:4000/stream-transcript`
-- AssemblyAI Streaming proxy keeps the API key server-side
-- LeMUR extraction wrapper with fallback
-- In-memory store matching the future Postgres schema shape
+| Layer | Choice |
+|---|---|
+| App | React 18, Vite, TypeScript, React Query |
+| API | Express on Vercel, same repo |
+| Speech | AssemblyAI Streaming v3, from the browser with a temporary token |
+| Reasoning | AssemblyAI LeMUR for extraction and Guide Me |
+| Data | JSON file for local runs. On Vercel, sample data reloads when the function cold-starts |
+| Later | Postgres schema in `backend/future-postgres/schema.sql`. Routes stay the same |
 
-## Setup
+## Deploy
 
-Backend:
+Root directory on Vercel is the repo root, not `frontend`.
+
+| Setting | Value |
+|---|---|
+| Env var | `ASSEMBLYAI_API_KEY` = your AssemblyAI key |
+| Build | taken from `vercel.json` |
+| API | same domain, under `/api`. Do not set `VITE_API_URL` |
+
+## Run locally
 
 ```powershell
 cd backend
@@ -61,17 +74,11 @@ npm.cmd install
 npm.cmd run dev
 ```
 
-Frontend:
-
 ```powershell
 cd frontend
 npm.cmd install
 npm.cmd run dev
 ```
-
-Use `npm.cmd` on Windows if PowerShell blocks `npm.ps1`.
-
-## Environment
 
 `backend/.env`:
 
@@ -81,115 +88,34 @@ PORT=4000
 CLIENT_URL=http://localhost:5173
 ```
 
-`frontend/.env`:
+Frontend dev calls `http://localhost:4000` on its own. A `frontend/.env` is optional.
 
-```env
-VITE_API_URL=http://localhost:4000
-```
+| URL | |
+|---|---|
+| App | http://localhost:5173 |
+| Health | http://localhost:4000/health |
 
-## Run URLs
+Local data is stored in `backend/data/store.json` and survives a restart. Delete that file to load the sample list again.
 
-```text
-Frontend: http://localhost:5173
-Backend:  http://localhost:4000
-Health:   http://localhost:4000/health
-```
+## API
 
-## Verify
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/transcribe/token` | Short-lived AssemblyAI streaming token |
+| `POST` | `/sessions` | Save a transcript and extract tasks |
+| `GET` | `/sessions` | Past captures and their tasks |
+| `GET` | `/tasks` | List tasks. Optional `status` and `category` |
+| `POST` | `/tasks` | Add a task by hand |
+| `PATCH` | `/tasks/:id` | Done, snooze, text, or urgency |
+| `DELETE` | `/tasks/:id` | Delete a task |
+| `POST` | `/guide-me` | Pick one task for a time and energy |
+| `POST` | `/guide-me/:eventId/feedback` | Record accept or skip |
+| `GET` | `/health` | `{ "ok": true }` |
 
-```powershell
-curl http://localhost:4000/health
-curl -X POST http://localhost:4000/tasks -H "Content-Type: application/json" -d "{\"text\":\"Test task\",\"category\":\"task\"}"
-curl http://localhost:4000/tasks
-```
+On Vercel every path is under `/api`, for example `/api/health`.
 
-Expected health response:
+## Not in this version
 
-```json
-{"ok":true}
-```
-
-## Audio Pipeline Details
-
-The browser captures mic audio with `navigator.mediaDevices.getUserMedia`.
-
-The frontend converts browser `Float32Array` audio samples into:
-
-```text
-PCM16 signed little-endian
-mono
-16 kHz
-```
-
-Those chunks are sent to:
-
-```text
-ws://localhost:4000/stream-transcript
-```
-
-The backend forwards binary audio chunks to AssemblyAI Streaming v3:
-
-```text
-wss://streaming.assemblyai.com/v3/ws
-```
-
-AssemblyAI `Turn` messages are sent back to the browser as transcript updates.
-
-## Current Limitations
-
-- Data resets when the backend restarts
-- No auth or user accounts
-- No automated tests yet
-- Guide Me is currently a frontend-only preview
-- Progress is currently frontend-only
-- Duplicate detection is not implemented yet
-- No confirm-to-merge flow yet
-- No task update/re-ramble endpoint yet
-
-## Next Features
-
-### Backend
-
-- `GET /progress`
-- `POST /guide-me`
-- `POST /guide-me/:eventId/feedback`
-- `POST /tasks/:id/updates`
-- Duplicate detection for new extracted items
-- Confirm-to-merge flow instead of silent auto-merge
-- Persist data with Postgres using `backend/future-postgres/schema.sql`
-
-### AI Pipeline
-
-- Improve extraction schema with confidence, due hints, and AI reasoning
-- Compare new extracted items against existing tasks
-- Use LeMUR to suggest duplicate matches
-- Let users confirm create vs merge
-- Use time, energy, urgency, and task age for Guide Me scoring
-- Log Guide Me accept/reject feedback for future personalization
-
-### Frontend
-
-- Split the current minimal UI into real components:
-  - `MicButton`
-  - `LiveTranscript`
-  - `SortingTransition`
-  - `TaskListView`
-  - `GuideMe`
-  - `History`
-  - `Progress`
-- Add better loading/error states
-- Add reconnect handling for dropped transcription sockets
-- Add merge confirmation UI
-- Add polished visual design
-
-## Database Plan
-
-The app currently uses `backend/src/store/memoryStore.ts`.
-
-Later, run:
-
-```text
-backend/future-postgres/schema.sql
-```
-
-Then replace the internals of the store functions with database queries while keeping the same exported function names. Routes and frontend code should not need a rewrite.
+- Accounts and login
+- A hosted database. Vercel keeps the list only until the next cold start
+- Speaking a change onto a task that already exists
