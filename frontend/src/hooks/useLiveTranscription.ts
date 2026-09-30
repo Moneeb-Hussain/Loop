@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { StreamMessage, streamUrl } from "../api/client";
+import { assemblyStreamUrl } from "../api/client";
 import { MicCapture, startMicCapture } from "../lib/audio";
 
 export type MicStatus = "idle" | "starting" | "connecting" | "listening" | "reconnecting";
@@ -17,7 +17,7 @@ function join(...parts: string[]): string {
 }
 
 /**
- * Streams mic audio to the backend and builds a live transcript.
+ * Streams mic audio straight to AssemblyAI and builds a live transcript.
  *
  * Turns are keyed by AssemblyAI's turn_order so the formatted copy of a turn
  * replaces the raw one instead of being appended. If the socket drops
@@ -74,47 +74,61 @@ export function useLiveTranscription() {
     setStatus("idle");
   }, [commitTurns]);
 
-  const openSocket = useCallback(() => {
-    const socket = new WebSocket(streamUrl());
+  const openSocket = useCallback(async () => {
+    let url: string;
+    try {
+      url = await assemblyStreamUrl();
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Could not start live transcription.");
+      teardown();
+      return;
+    }
+
+    if (stoppingRef.current) return;
+
+    const socket = new WebSocket(url);
     socket.binaryType = "arraybuffer";
     socketRef.current = socket;
     let fatal = false;
 
+    socket.onopen = () => {
+      if (stoppingRef.current || socketRef.current !== socket) {
+        socket.close();
+        return;
+      }
+      attemptsRef.current = 0;
+      setError(null);
+      setStatus("listening");
+      bufferRef.current.forEach((chunk) => socket.send(chunk));
+      bufferRef.current = [];
+    };
+
     socket.onmessage = (event) => {
-      let data: StreamMessage;
+      let data: { type?: string; transcript?: string; end_of_turn?: boolean; turn_order?: number; error?: string };
       try {
-        data = JSON.parse(event.data as string) as StreamMessage;
+        data = JSON.parse(event.data as string);
       } catch {
         return;
       }
 
-      if (data.type === "ready") {
-        attemptsRef.current = 0;
-        setError(null);
-        setStatus("listening");
-        bufferRef.current.forEach((chunk) => socket.send(chunk));
-        bufferRef.current = [];
-        return;
-      }
-
-      if (data.type === "transcript") {
-        const key = data.turnOrder ?? fallbackTurnRef.current;
-        if (data.turnOrder === undefined && data.final) fallbackTurnRef.current += 1;
+      if (data.type === "Turn" && data.transcript) {
+        const key = data.turn_order ?? fallbackTurnRef.current;
+        const final = Boolean(data.end_of_turn);
+        if (data.turn_order === undefined && final) fallbackTurnRef.current += 1;
         setTurns((previous) => {
           const existing = previous.get(key);
-          // Don't let a late partial overwrite a turn that already finished.
-          if (existing?.final && !data.final) return previous;
+          if (existing?.final && !final) return previous;
           const next = new Map(previous);
-          next.set(key, { text: data.text, final: data.final });
+          next.set(key, { text: data.transcript as string, final });
           turnsRef.current = next;
           return next;
         });
         return;
       }
 
-      if (data.type === "error") {
+      if (data.type === "Error" || data.error) {
         fatal = true;
-        setError(data.message);
+        setError(data.error || "AssemblyAI streaming connection failed.");
       }
     };
 

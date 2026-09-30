@@ -11,6 +11,9 @@ import { SortingTransition } from "./SortingTransition";
 
 const DRAFT_KEY = "loop:draft";
 
+const SAMPLE_TRANSCRIPT =
+  "I need to email Sam about Friday's meeting, book the dentist before the month ends, pay the electricity bill, and I keep worrying the budget presentation isn't ready.";
+
 function readDraft(): string {
   try {
     return localStorage.getItem(DRAFT_KEY) ?? "";
@@ -109,6 +112,9 @@ export function CaptureView() {
       <div className="actions spread">
         <span className="muted small">{words ? `${words} words` : "Tip: Ctrl+Enter to sort"}</span>
         <div className="actions">
+          <button className="ghost" onClick={() => live.setTranscript(SAMPLE_TRANSCRIPT)} disabled={live.isActive}>
+            Use sample
+          </button>
           <button className="ghost" onClick={() => live.setTranscript("")} disabled={!hasText || live.isActive}>
             Clear
           </button>

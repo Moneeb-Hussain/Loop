@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { MicStatus } from "../hooks/useLiveTranscription";
 
 const statusCopy: Record<MicStatus, string> = {
@@ -30,7 +31,7 @@ export function MicButton({
         disabled={disabled}
         aria-pressed={active}
         aria-label={active ? "Stop recording" : "Start recording"}
-        style={{ "--level": level } as React.CSSProperties}
+        style={{ "--level": level } as CSSProperties}
       >
         <span className="mic-ring" aria-hidden="true" />
         {active ? (

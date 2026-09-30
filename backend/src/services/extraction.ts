@@ -43,6 +43,7 @@ export async function extractItems(transcript: string): Promise<{
     const raw = await callLemur({
       prompt: EXTRACTION_PROMPT,
       input_text: transcript,
+      timeoutMs: process.env.VERCEL ? 8000 : 15000,
     });
 
     const parsed = parseJsonSafe<ExtractedItem[]>(raw);

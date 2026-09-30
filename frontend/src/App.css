@@ -337,7 +337,312 @@ h3 {
     grid-template-columns: 1fr;
   }
 
-  .tabs button {
+  .tabs button,
+  .tabs a {
     flex: 1 1 130px;
   }
+}
+
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #173f35;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #173f35;
+  min-height: 40px;
+  padding: 0 14px;
+  text-decoration: none;
+}
+
+.tabs a:hover {
+  background: #e8eee9;
+}
+
+.tabs a.active {
+  background: #173f35;
+  color: #ffffff;
+}
+
+button.ghost {
+  border-color: #173f35;
+  background: #ffffff;
+  color: #173f35;
+}
+
+button.ghost:hover {
+  background: #e8eee9;
+}
+
+button.danger-text {
+  border-color: #9f2c2c;
+  color: #9f2c2c;
+}
+
+.small {
+  font-size: 0.86rem;
+}
+
+.spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.capture-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.mic {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+
+.mic-button {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  padding: 0;
+}
+
+.mic-button svg {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.mic-status,
+.meta-text {
+  margin: 0;
+  color: #66756f;
+  font-size: 0.86rem;
+}
+
+.transcript.live {
+  min-height: 180px;
+  max-height: 280px;
+  overflow: auto;
+  border: 1px solid #cfd8d3;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.partial {
+  color: #66756f;
+}
+
+.placeholder {
+  color: #8a9792;
+}
+
+.task-item {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+button.check {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0;
+  background: #ffffff;
+  color: #173f35;
+}
+
+button.check svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.task-item.done button.check {
+  background: #173f35;
+  color: #ffffff;
+}
+
+.task-text {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.task-edit {
+  margin-bottom: 6px;
+}
+
+.tag {
+  border-radius: 999px;
+  background: #eef3ef;
+  padding: 4px 8px;
+  font-size: 0.86rem;
+}
+
+.urgency {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.urgency button {
+  width: 10px;
+  height: 10px;
+  min-height: 10px;
+  border-radius: 999px;
+  padding: 0;
+  background: #d9e0dc;
+  border-color: transparent;
+}
+
+.urgency button.filled {
+  background: #173f35;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.toolbar-right {
+  display: flex;
+  gap: 8px;
+}
+
+.search {
+  width: 180px;
+}
+
+.skeleton {
+  height: 64px;
+  border-radius: 8px;
+  background: #e8eee9;
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #d9e0dc;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.banner.warning {
+  background: #fff6e8;
+}
+
+.toasts {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  display: grid;
+  gap: 8px;
+  width: min(360px, calc(100vw - 32px));
+  z-index: 20;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  background: #173f35;
+  color: #ffffff;
+  padding: 10px 12px;
+}
+
+.toast button {
+  background: transparent;
+  color: #ffffff;
+  border-color: transparent;
+  min-height: 32px;
+}
+
+.guide-inputs,
+.segmented,
+.progress-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.segmented button,
+.guide-card,
+.chart {
+  border: 1px solid #d9e0dc;
+  border-radius: 8px;
+}
+
+.guide-card,
+.chart {
+  padding: 16px;
+  margin-top: 14px;
+}
+
+.progress-grid {
+  align-items: stretch;
+}
+
+.chart {
+  flex: 1 1 240px;
+}
+
+.bars {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  height: 140px;
+}
+
+.bar-col {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  height: 100%;
+  gap: 4px;
+}
+
+.bar {
+  width: 100%;
+  min-height: 4px;
+  border-radius: 6px 6px 0 0;
+  background: #173f35;
+}
+
+.meter {
+  height: 8px;
+  border-radius: 999px;
+  background: #e8eee9;
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: #173f35;
+}
+
+.count {
+  margin-left: 6px;
+  opacity: 0.7;
 }
