@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import * as store from "../store/memoryStore.js";
+import * as store from "../store/memoryStore.ts";
 
 const router = Router();
 

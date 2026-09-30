@@ -1,7 +1,7 @@
 import "dotenv/config";
 import http from "http";
-import app from "./app.js";
-import { attachStreamingTranscription } from "./services/streamingTranscription.js";
+import app from "./app.ts";
+import { attachStreamingTranscription } from "./services/streamingTranscription.ts";
 
 const server = http.createServer(app);
 attachStreamingTranscription(server);

@@ -19,8 +19,9 @@ if (!ASSEMBLYAI_API_KEY) {
 }
 
 export class LemurError extends Error {
-  constructor(message: string, public cause?: unknown) {
-    super(message);
+  constructor(message: string, cause?: unknown) {
+    super(message, { cause });
+    this.name = "LemurError";
   }
 }
 

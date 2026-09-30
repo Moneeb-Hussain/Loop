@@ -1,5 +1,5 @@
-import { callLemur, parseJsonSafe } from "./lemur.js";
-import * as store from "../store/memoryStore.js";
+import { callLemur, parseJsonSafe } from "./lemur.ts";
+import * as store from "../store/memoryStore.ts";
 
 type Energy = "low" | "medium" | "high";
 type Minutes = 5 | 15 | 30;

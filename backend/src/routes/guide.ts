@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
-import { pickGuideTask } from "../services/guide.js";
-import * as store from "../store/memoryStore.js";
+import { pickGuideTask } from "../services/guide.ts";
+import * as store from "../store/memoryStore.ts";
 
 const router = Router();
 

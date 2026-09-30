@@ -1,4 +1,4 @@
-import { callLemur, parseJsonSafe } from "./lemur.js";
+import { callLemur, parseJsonSafe } from "./lemur.ts";
 
 export type TaskCategory = "task" | "reminder" | "open_loop";
 

@@ -4,9 +4,7 @@
     "backend": {
       "root": "backend",
       "framework": "express",
-      "installCommand": "npm install --include=dev",
-      "buildCommand": "npm run build",
-      "entrypoint": "dist/app.js"
+      "entrypoint": "src/app.ts"
     },
     "frontend": {
       "root": "frontend",

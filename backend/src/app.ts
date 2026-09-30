@@ -1,9 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import taskRoutes from "./routes/tasks.js";
-import sessionRoutes from "./routes/sessions.js";
-import guideRoutes from "./routes/guide.js";
+import taskRoutes from "./routes/tasks.ts";
+import sessionRoutes from "./routes/sessions.ts";
+import guideRoutes from "./routes/guide.ts";
 
 const app = express();
 
