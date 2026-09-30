@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import taskRoutes from "./routes/tasks.js";
 import sessionRoutes from "./routes/sessions.js";
+import guideRoutes from "./routes/guide.js";
 import { attachStreamingTranscription } from "./services/streamingTranscription.js";
 
 const app = express();
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.use("/tasks", taskRoutes);
 app.use("/sessions", sessionRoutes);
+app.use("/guide-me", guideRoutes);
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 

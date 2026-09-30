@@ -36,8 +36,20 @@ export interface Task {
 const dataDir = join(dirname(fileURLToPath(import.meta.url)), "../../data");
 const dataFile = join(dataDir, "store.json");
 
+export interface GuideMeEvent {
+  id: string;
+  task_id: string | null;
+  time_available: string;
+  energy_level: string;
+  reason_given: string | null;
+  first_step_given: string | null;
+  accepted: boolean | null;
+  created_at: string;
+}
+
 const sessions: Session[] = [];
 const tasks: Task[] = [];
+const guideEvents: GuideMeEvent[] = [];
 
 function now(): string {
   return new Date().toISOString();
@@ -54,7 +66,7 @@ function hoursAhead(hours: number): string {
 function save(): void {
   try {
     mkdirSync(dataDir, { recursive: true });
-    writeFileSync(dataFile, JSON.stringify({ sessions, tasks }, null, 2));
+    writeFileSync(dataFile, JSON.stringify({ sessions, tasks, guideEvents }, null, 2));
   } catch (error) {
     console.error("Could not save demo data:", error);
   }
@@ -134,9 +146,14 @@ function load(): void {
   }
 
   try {
-    const parsed = JSON.parse(readFileSync(dataFile, "utf8")) as { sessions?: Session[]; tasks?: Task[] };
+    const parsed = JSON.parse(readFileSync(dataFile, "utf8")) as {
+      sessions?: Session[];
+      tasks?: Task[];
+      guideEvents?: GuideMeEvent[];
+    };
     sessions.push(...(parsed.sessions ?? []));
     tasks.push(...(parsed.tasks ?? []));
+    guideEvents.push(...(parsed.guideEvents ?? []));
   } catch (error) {
     console.error("Could not read demo data, starting fresh:", error);
     seed();
@@ -213,4 +230,34 @@ export function listSessions(): Session[] {
 
 export function getTasksBySession(sessionId: string): Task[] {
   return tasks.filter((t) => t.origin_session_id === sessionId);
+}
+
+export function createGuideEvent(data: {
+  taskId: string;
+  timeAvailable: string;
+  energyLevel: string;
+  reason: string;
+  firstStep: string;
+}): GuideMeEvent {
+  const event: GuideMeEvent = {
+    id: randomUUID(),
+    task_id: data.taskId,
+    time_available: data.timeAvailable,
+    energy_level: data.energyLevel,
+    reason_given: data.reason,
+    first_step_given: data.firstStep,
+    accepted: null,
+    created_at: now(),
+  };
+  guideEvents.push(event);
+  save();
+  return event;
+}
+
+export function setGuideFeedback(id: string, accepted: boolean): GuideMeEvent | undefined {
+  const event = guideEvents.find((item) => item.id === id);
+  if (!event) return undefined;
+  event.accepted = accepted;
+  save();
+  return event;
 }
