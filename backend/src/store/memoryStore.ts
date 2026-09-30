@@ -33,7 +33,7 @@ export interface Task {
   updated_at: string;
 }
 
-const dataDir = join(dirname(fileURLToPath(import.meta.url)), "../../data");
+const dataDir = process.env.VERCEL ? "/tmp/loop" : join(dirname(fileURLToPath(import.meta.url)), "../../data");
 const dataFile = join(dataDir, "store.json");
 
 export interface GuideMeEvent {
