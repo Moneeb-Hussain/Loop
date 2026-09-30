@@ -16,6 +16,9 @@ build/
 *.log
 npm-debug.log*
 
+# demo data (local stand-in for Postgres)
+backend/data/
+
 # OS / editor
 .DS_Store
 Thumbs.db
