@@ -46,6 +46,15 @@ export type StreamMessage =
   | { type: "transcript"; text: string; final: boolean; turnOrder?: number }
   | { type: "error"; message: string };
 
+export interface GuidePick {
+  eventId: string | null;
+  task: Task | null;
+  reason: string;
+  firstStep: string;
+  remaining: number;
+  degraded: boolean;
+}
+
 export function streamUrl(): string {
   const url = new URL(API_URL);
   url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
@@ -96,5 +105,13 @@ export const api = {
     create: (transcript: string) =>
       request<CreateSessionResponse>("/sessions", { method: "POST", body: JSON.stringify({ transcript }) }),
     list: () => request<SessionWithTasks[]>("/sessions"),
+  },
+  guide: {
+    suggest: (
+      data: { timeAvailable: 5 | 15 | 30; energyLevel: "low" | "medium" | "high"; skipIds: string[] },
+      signal?: AbortSignal
+    ) => request<GuidePick>("/guide-me", { method: "POST", body: JSON.stringify(data), signal }),
+    feedback: (eventId: string, accepted: boolean) =>
+      request<unknown>(`/guide-me/${eventId}/feedback`, { method: "POST", body: JSON.stringify({ accepted }) }),
   },
 };

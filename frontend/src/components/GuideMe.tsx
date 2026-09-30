@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "../api/client";
 import { useTaskHandlers } from "../hooks/TaskHandlersProvider";
 import { useTasks } from "../hooks/useLoopData";
 import { categoryLabel, daysOld } from "../lib/format";
@@ -19,12 +20,40 @@ export function GuideMe() {
   const [time, setTime] = useState<TimeAvailable>(15);
   const [energy, setEnergy] = useState<Energy>("medium");
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
+  const [remote, setRemote] = useState<{ key: string; eventId: string; taskId: string; reason: string; firstStep: string } | null>(null);
 
   const ranked = useMemo(() => rankTasks(tasksQuery.data ?? [], time, energy, skipped), [tasksQuery.data, time, energy, skipped]);
   const suggestion = ranked[0];
+  const requestKey = `${time}:${energy}:${[...skipped].sort().join(",")}`;
+  const remoteMatch = remote?.key === requestKey && remote.taskId === suggestion?.task.id ? remote : null;
+
+  useEffect(() => {
+    const controller = new AbortController();
+    api.guide
+      .suggest({ timeAvailable: time, energyLevel: energy, skipIds: [...skipped] }, controller.signal)
+      .then((pick) => {
+        if (!pick.task || !pick.eventId) return;
+        setRemote({
+          key: requestKey,
+          eventId: pick.eventId,
+          taskId: pick.task.id,
+          reason: pick.reason,
+          firstStep: pick.firstStep,
+        });
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [requestKey, time, energy, skipped]);
 
   function skip(id: string) {
+    if (remoteMatch) void api.guide.feedback(remoteMatch.eventId, false);
     setSkipped((previous) => new Set(previous).add(id));
+  }
+
+  function finish() {
+    if (!suggestion) return;
+    if (remoteMatch) void api.guide.feedback(remoteMatch.eventId, true);
+    handlers.onComplete(suggestion.task);
   }
 
   return (
@@ -68,13 +97,14 @@ export function GuideMe() {
               <span className="meta-text">{daysOld(suggestion.task) ? `${daysOld(suggestion.task)}d old` : "new today"}</span>
             </div>
             <h3>{suggestion.task.text}</h3>
-            <p className="muted">{suggestion.reason}</p>
+            <p className="muted">{remoteMatch ? remoteMatch.reason : suggestion.reason}</p>
+            {!remoteMatch && <p className="muted small">Asking Loop why this one…</p>}
             <div className="first-step">
               <span>First step</span>
-              <p>{suggestion.firstStep}</p>
+              <p>{remoteMatch ? remoteMatch.firstStep : suggestion.firstStep}</p>
             </div>
             <div className="actions">
-              <button onClick={() => handlers.onComplete(suggestion.task)}>Did it</button>
+              <button onClick={finish}>Did it</button>
               <button className="ghost" onClick={() => skip(suggestion.task.id)}>
                 Not this one
               </button>
