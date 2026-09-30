@@ -33,6 +33,27 @@ export interface CreateSessionResponse {
   degraded: boolean;
 }
 
+export interface TaskUpdate {
+  status?: TaskStatus;
+  urgency?: number;
+  text?: string;
+  snoozedUntil?: string;
+  snoozeReason?: string;
+}
+
+export type StreamMessage =
+  | { type: "ready" | "Begin" | "SpeechStarted" | "closed" }
+  | { type: "transcript"; text: string; final: boolean; turnOrder?: number }
+  | { type: "error"; message: string };
+
+export function streamUrl(): string {
+  const url = new URL(API_URL);
+  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+  url.pathname = "/stream-transcript";
+  url.search = "";
+  return url.toString();
+}
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -65,7 +86,7 @@ export const api = {
       const qs = new URLSearchParams(params as Record<string, string>).toString();
       return request<Task[]>(`/tasks${qs ? `?${qs}` : ""}`);
     },
-    update: (id: string, data: Record<string, unknown>) =>
+    update: (id: string, data: TaskUpdate) =>
       request<Task>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     delete: (id: string) => request<void>(`/tasks/${id}`, { method: "DELETE" }),
     create: (data: { text: string; category: TaskCategory }) =>
