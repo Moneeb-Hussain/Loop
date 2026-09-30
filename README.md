@@ -21,21 +21,21 @@ browser mic -> backend WebSocket -> AssemblyAI Streaming -> live transcript -> P
 
 ### Frontend
 
-- React Query for server state (optimistic task updates, refetch on focus), React Router for tabs (`/capture`, `/tasks`, `/guide`, `/history`, `/progress`), Zustand for toasts
-- Capture
-  - Mic capture via AudioWorklet (ScriptProcessor fallback), averaged downsampling to PCM16 mono 16 kHz, ~100 ms chunks
-  - Live transcript with partial vs final turns, keyed by AssemblyAI `turn_order` so formatted turns replace raw ones
-  - Auto-reconnect (3 attempts with backoff) if the transcription socket drops; mic keeps running and audio is buffered
-  - Unsent drafts survive a page reload (localStorage)
-  - Sorting animation while LeMUR extracts, then a review screen
-  - Merge confirmation: new items that look like existing tasks are flagged, and you choose Merge or Keep both (client-side word-overlap matching until backend duplicate detection exists)
-- Tasks: quick add, filters with counts (Active, Tasks, Reminders, Open loops, Snoozed, Done), search, sort, inline text editing, urgency picker, done with undo, snooze dialog with presets and reasons, wake up / reopen, two-step delete
-- Expired snoozes are treated as active again
-- Guide Me: ranks active tasks by urgency, age, and fit for the chosen time and energy, then explains the pick and suggests a first step. Skip or snooze from the card.
-- History: searchable capture sessions with their tasks
-- Progress: 7-day completions chart, streak, open loops closed, completion by category
-- Backend connection indicator, loading skeletons, retryable error states, toasts
-- Light/dark theme, responsive down to phone width, reduced-motion support
+- Minimal app UI with tabs: Capture, Tasks, Guide Me, History, Progress
+- Live mic capture with `getUserMedia`
+- Audio conversion to PCM16 mono 16 kHz before streaming
+- Live transcript rendering in the Capture textarea
+- Transcript extraction via `POST /sessions`
+- Task manager wired to backend:
+  - list tasks
+  - manual add
+  - filters: Today, Reminders, Tasks, Open loops, Done
+  - mark done
+  - snooze with reason
+  - delete
+- History view from `GET /sessions`
+- Local-only Guide Me preview
+- Local-only progress metrics
 
 ### Backend
 
@@ -140,9 +140,10 @@ AssemblyAI `Turn` messages are sent back to the browser as transcript updates.
 - Data resets when the backend restarts
 - No auth or user accounts
 - No automated tests yet
-- Guide Me scoring and Progress stats are computed in the browser
-- Duplicate detection is a client-side heuristic; there is no backend merge endpoint, so Merge deletes the new item and raises the existing item's urgency
-- Task category can't be changed after creation (PATCH doesn't accept it)
+- Guide Me is currently a frontend-only preview
+- Progress is currently frontend-only
+- Duplicate detection is not implemented yet
+- No confirm-to-merge flow yet
 - No task update/re-ramble endpoint yet
 
 ## Next Features
@@ -168,9 +169,18 @@ AssemblyAI `Turn` messages are sent back to the browser as transcript updates.
 
 ### Frontend
 
-- Switch Guide Me and Progress to the backend endpoints once they exist
-- Replace client-side duplicate matching with backend/LeMUR suggestions
-- Allow changing a task's category
+- Split the current minimal UI into real components:
+  - `MicButton`
+  - `LiveTranscript`
+  - `SortingTransition`
+  - `TaskListView`
+  - `GuideMe`
+  - `History`
+  - `Progress`
+- Add better loading/error states
+- Add reconnect handling for dropped transcription sockets
+- Add merge confirmation UI
+- Add polished visual design
 
 ## Database Plan
 

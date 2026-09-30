@@ -9,8 +9,6 @@ type AssemblyTurnMessage = {
   type: "Turn";
   transcript?: string;
   end_of_turn?: boolean;
-  turn_order?: number;
-  turn_is_formatted?: boolean;
 };
 
 type AssemblyMessage = AssemblyTurnMessage | { type: string; [key: string]: unknown };
@@ -58,11 +56,6 @@ export function attachStreamingTranscription(server: Server) {
             type: "transcript",
             text: data.transcript,
             final: Boolean(data.end_of_turn),
-            // With format_turns=true AssemblyAI sends each finished turn twice
-            // (raw, then formatted). turn_order lets the client replace rather
-            // than append the second copy.
-            turnOrder: data.turn_order,
-            formatted: Boolean(data.turn_is_formatted),
           });
           return;
         }

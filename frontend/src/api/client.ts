@@ -33,28 +33,6 @@ export interface CreateSessionResponse {
   degraded: boolean;
 }
 
-export interface TaskUpdate {
-  status?: TaskStatus;
-  urgency?: number;
-  text?: string;
-  snoozedUntil?: string;
-  snoozeReason?: string;
-}
-
-export type StreamMessage =
-  | { type: "ready" | "Begin" | "SpeechStarted" }
-  | { type: "closed"; code?: number; reason?: string }
-  | { type: "transcript"; text: string; final: boolean; turnOrder?: number; formatted?: boolean }
-  | { type: "error"; message: string };
-
-export function streamUrl(): string {
-  const url = new URL(API_URL);
-  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  url.pathname = "/stream-transcript";
-  url.search = "";
-  return url.toString();
-}
-
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -64,24 +42,17 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_URL}${path}`, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-    });
-  } catch {
-    throw new ApiError(`Can't reach the Loop backend at ${API_URL}. Is it running?`, 0);
-  }
+  const res = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    // Zod validation errors come back as { formErrors, fieldErrors } objects.
-    const detail = typeof body.error === "string" ? body.error : body.error?.formErrors?.[0];
-    throw new ApiError(detail || `Request failed: ${res.status}`, res.status);
+    throw new ApiError(body.error || `Request failed: ${res.status}`, res.status);
   }
 
   if (res.status === 204) return undefined as T;
@@ -94,13 +65,12 @@ export const api = {
       const qs = new URLSearchParams(params as Record<string, string>).toString();
       return request<Task[]>(`/tasks${qs ? `?${qs}` : ""}`);
     },
-    update: (id: string, data: TaskUpdate) =>
+    update: (id: string, data: Record<string, unknown>) =>
       request<Task>(`/tasks/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     delete: (id: string) => request<void>(`/tasks/${id}`, { method: "DELETE" }),
     create: (data: { text: string; category: TaskCategory }) =>
       request<Task>("/tasks", { method: "POST", body: JSON.stringify(data) }),
   },
-  health: () => request<{ ok: boolean }>("/health"),
   sessions: {
     create: (transcript: string) =>
       request<CreateSessionResponse>("/sessions", { method: "POST", body: JSON.stringify({ transcript }) }),
